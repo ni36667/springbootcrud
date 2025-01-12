@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CaseStudy Project for Open WeatherAPI
+Parameters:
+  ElementName:
+    Type: String
+    Default: id
+    Description: Name
+  ElementType:
+    Type: String
+    Default: S
+    Description: Type
+  EnvironmentName:
+    Type: String
+    Default: test
+    
+  GitHubUrl:
+    Type: String
+    Description: URL for GitHub repo i.e. https://github.com/ni36667/springbootcrud.git
+    
+  GitHubAccessToken:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Name of parameter with GitHub access token
+    Default: codebuild-github-token
+    NoEcho: True
+    
+Resources:
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: casestudy_api_lambda_db
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+                
+  CodeBuildCredentials:
+    Type: AWS::CodeBuild::SourceCredential
+    Properties:
+      ServerType: GITHUB
+      AuthType: PERSONAL_ACCESS_TOKEN
+      Token: !Ref GitHubAccessToken
+ 
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt IAMRole.Arn
+      Code:
+        S3Bucket: casestudy-s3-bucket
+        S3Key: springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip
+      Handler: com.awslambda.crud.StreamLambdaHandler::handleRequest
+      Runtime: java17
+      MemorySize: 512
+      Timeout: 30
+      PackageType: Zip
+      EphemeralStorage:
+        Size: 512
+      Architectures:
+        - x86_64
+      TracingConfig:
+        Mode: PassThrough
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+    
+
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: WeatherAPI
+    DependsOn: LambdaFunction
+
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: '{proxy+}'
+    DependsOn: ApiGatewayRestApi
+
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+    DependsOn: ApiGatewayResource
+
+  APIGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: !Ref EnvironmentName
+    DependsOn: ApiGatewayMethod
+
+  ApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+    DependsOn:
+      - APIGatewayDeployment
+      
+   CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+            - Effect: Allow
+              Principal:
+                  Service:
+                    - codebuild.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      Description: !Sub "IAM Role for ${AWS::StackName}"
+      Path: '/'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - codebuild:*
+                  - logs:*
+                Resource: '*'
+  CodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: CodeBuild with GitHub webhook
+      Triggers:
+        BuildType: BUILD
+        Webhook: True
+        FilterGroups:
+        - - Type: EVENT
+            Pattern: PUSH,PULL_REQUEST_MERGED
+          - Type: HEAD_REF
+            Pattern: ^refs/heads/main$
+            ExcludeMatchedPattern: false
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        EnvironmentVariables:
+          - Name: MY_ENV_VAR
+            Value: something
+            Type: PLAINTEXT
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubUrl
+      TimeoutInMinutes: 10
+      
+  CodeBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${CodeBuild}"
+      RetentionInDays: 7   

@@ -11,7 +11,7 @@ Resources:
     Properties:
       Handler: com.awslambda.crud.StreamLambdaHandler::handleRequest
       Runtime: java21
-      CodeUri: .
+      CodeUri: .target/springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip
       MemorySize: 512
       Policies: AWSLambdaBasicExecutionRole
       Timeout: 30
