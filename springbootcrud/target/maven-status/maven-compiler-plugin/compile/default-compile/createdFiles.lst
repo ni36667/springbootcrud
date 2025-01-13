@@ -1,6 +1,0 @@
-com\awslambda\crud\springbootcrud\entity\Book.class
-com\awslambda\crud\springbootcrud\controller\BookController.class
-com\awslambda\crud\springbootcrud\exception\BookNotFoundException.class
-com\awslambda\crud\springbootcrud\repo\BookRepository.class
-com\awslambda\crud\springbootcrud\StreamLambdaHandler.class
-com\awslambda\crud\springbootcrud\Application.class
