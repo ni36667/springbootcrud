@@ -42,7 +42,7 @@ Resources:
       Role: !GetAtt IAMRole.Arn
       Code:
         S3Bucket: casestudy-s3-bucket
-        S3Key: casestudy-0.0.1-SNAPSHOT-lambda-package.zip
+        S3Key: springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip
       Handler: com.crudLambdaapi.casestudy.StreamLambdaHandler::handleRequest
       Runtime: java17
       MemorySize: 512
