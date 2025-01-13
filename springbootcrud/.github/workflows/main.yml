@@ -32,7 +32,7 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
     - name: Copy artifact to s3 bucket
-      run: aws s3 cp ./springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip s3://casestudy-s3-bucket/
+      run: aws s3 cp ./target/springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip s3://casestudy-s3-bucket/
     - name: Copy cloudtemplate to s3 bucket
       run: aws s3 cp ./resources-template.yaml s3://casestudy-s3-bucket/
   deploy:
@@ -53,6 +53,6 @@ jobs:
     - name: Deploy to AWS CloudFormation
       uses: aws-actions/aws-cloudformation-github-deploy@v1
       with:
-        name: weather-app-stack
+        name: lambda-app-stack
         template: https://casestudy-s3-bucket.s3.amazonaws.com/resources-template.yaml
         no-fail-on-empty-changeset: "1"
