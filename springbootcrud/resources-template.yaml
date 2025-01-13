@@ -43,7 +43,7 @@ Resources:
       Code:
         S3Bucket: casestudy-s3-bucket
         S3Key: springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip
-      Handler: com.crudLambdaapi.casestudy.StreamLambdaHandler::handleRequest
+      Handler: com.awslambda.crud.springbootcrud.StreamLambdaHandler::handleRequest
       Runtime: java17
       MemorySize: 512
       Timeout: 30
