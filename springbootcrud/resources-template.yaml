@@ -35,33 +35,7 @@ Resources:
                 Action: '*'
                 Resource: '*'
 
-  MyRDSDB:
-  Type: "AWS::RDS::DBInstance"
-  Properties:
-    DBInstanceIdentifier: !Ref DBInstanceName
-    DBName: !Ref DBName
-    AllocatedStorage: "100"
-    DBInstanceClass: !Ref DBInstanceType
-    Engine: "postgres"
-    EngineVersion: "9.6.2"
-    MasterUsername: !Ref DBUsername
-    MasterUserPassword: !Ref DBPassword
-    PubliclyAccessible: false
-    DBSubnetGroupName: !Ref myDBSubnetGroup
-    StorageType: standard
-    VPCSecurityGroups:
-      - !Ref PrivateAccess
-    MultiAZ: true
-  DeletionPolicy: "Snapshot"
-
-myDBSubnetGroup:
-  Type: "AWS::RDS::DBSubnetGroup"
-  Properties:
-    DBSubnetGroupDescription: "description"
-    SubnetIds:
-      - !Ref PrivateSubnet
-    DependsOn: IAMRole
-
+ 
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -82,7 +56,6 @@ myDBSubnetGroup:
         Mode: PassThrough
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
-    DependsOn: MyRDSDB
 
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
