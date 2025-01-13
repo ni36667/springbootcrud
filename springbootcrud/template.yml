@@ -9,7 +9,7 @@ Resources:
   SpringbootcrudFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: com.awslambda.crud.StreamLambdaHandler::handleRequest
+      Handler: com.awslambda.crud.springbootcrud.StreamLambdaHandler::handleRequest
       Runtime: java21
       CodeUri: .target/springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip
       MemorySize: 512
