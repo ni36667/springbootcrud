@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CaseStudy Project for Crud API
+Description: CaseStudy Project for Open crudLambdaAPI
 Parameters:
   ElementName:
     Type: String
@@ -35,14 +35,41 @@ Resources:
                 Action: '*'
                 Resource: '*'
 
+  MyRDSDB:
+  Type: "AWS::RDS::DBInstance"
+  Properties:
+    DBInstanceIdentifier: !Ref DBInstanceName
+    DBName: !Ref DBName
+    AllocatedStorage: "100"
+    DBInstanceClass: !Ref DBInstanceType
+    Engine: "postgres"
+    EngineVersion: "9.6.2"
+    MasterUsername: !Ref DBUsername
+    MasterUserPassword: !Ref DBPassword
+    PubliclyAccessible: false
+    DBSubnetGroupName: !Ref myDBSubnetGroup
+    StorageType: standard
+    VPCSecurityGroups:
+      - !Ref PrivateAccess
+    MultiAZ: true
+  DeletionPolicy: "Snapshot"
+
+myDBSubnetGroup:
+  Type: "AWS::RDS::DBSubnetGroup"
+  Properties:
+    DBSubnetGroupDescription: "description"
+    SubnetIds:
+      - !Ref PrivateSubnet
+    DependsOn: IAMRole
+
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
       Role: !GetAtt IAMRole.Arn
       Code:
         S3Bucket: casestudy-s3-bucket
-        S3Key: springbootcrud-0.0.1-SNAPSHOT-lambda-package.zip
-      Handler: com.awslambda.crud.springbootcrud.StreamLambdaHandler::handleRequest
+        S3Key: casestudy-0.0.1-SNAPSHOT-lambda-package.zip
+      Handler: com.crudLambdaapi.casestudy.StreamLambdaHandler::handleRequest
       Runtime: java17
       MemorySize: 512
       Timeout: 30
@@ -55,12 +82,12 @@ Resources:
         Mode: PassThrough
       RuntimeManagementConfig:
         UpdateRuntimeOn: Auto
-    
+    DependsOn: MyRDSDB
 
   ApiGatewayRestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: LambdaCrudAPI
+      Name: crudLambdaAPI
     DependsOn: LambdaFunction
 
   ApiGatewayResource:
